@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stepping Stones: Color River Adventure</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Fredoka', 'Inter', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .river-gradient {
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 45%, #0369a1 100%);
+    }
+    .water-wave {
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 70%);
+      animation: ripple 4s ease-in-out infinite alternate;
+    }
+    @keyframes ripple {
+      0% { transform: scale(0.95) translateY(0); opacity: 0.4; }
+      100% { transform: scale(1.05) translateY(4px); opacity: 0.8; }
+    }
+    @keyframes bounce-char {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .char-idle {
+      animation: bounce-char 1.8s ease-in-out infinite;
+    }
+    .stone-shadow {
+      box-shadow: 0 10px 0 rgba(0,0,0,0.18), 0 14px 22px rgba(0,0,0,0.25);
+    }
+    .stone-shadow:active, .stone-pressed {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.18), 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .glow-active {
+      box-shadow: 0 0 0 6px #ffffff, 0 0 25px rgba(255,255,255,0.9);
+      animation: pulse-ring 1.4s infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 4px #ffffff, 0 0 15px rgba(255,255,255,0.8); }
+      50% { box-shadow: 0 0 0 8px #fef08a, 0 0 28px rgba(254,240,138,0.95); }
+      100% { box-shadow: 0 0 0 4px #ffffff, 0 0 15px rgba(255,255,255,0.8); }
+    }
+    .splash-effect {
+      animation: waterSplash 0.6s ease-out forwards;
+    }
+    @keyframes waterSplash {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex flex-col justify-between overflow-x-hidden text-slate-800">
+
+  <header class="w-full bg-white/90 backdrop-blur border-b-4 border-amber-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-sm z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+        🐾
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-amber-900 tracking-wide">Pudding's River Crossing</h1>
+        <p class="text-xs md:text-sm text-slate-500 font-semibold">Jardim I &bull; Listen, Look &amp; Jump!</p>
+      </div>
+    </div>
+
+    <!-- Active Character Selector -->
+    <div class="flex items-center gap-2 bg-amber-100 p-1.5 rounded-2xl">
+      <button id="btn-char-pudding" onclick="selectCharacter('pudding')" class="char-btn px-3 py-1.5 rounded-xl font-bold text-sm transition-all bg-amber-500 text-white shadow-sm flex items-center gap-1.5">
+        <span>🐱</span> <span>Pudding</span>
+      </button>
+      <button id="btn-char-lia" onclick="selectCharacter('lia')" class="char-btn px-3 py-1.5 rounded-xl font-bold text-sm transition-all text-amber-900 hover:bg-amber-200/60 flex items-center gap-1.5">
+        <span>👧</span> <span>Lia</span>
+      </button>
+      <button id="btn-char-ben" onclick="selectCharacter('ben')" class="char-btn px-3 py-1.5 rounded-xl font-bold text-sm transition-all text-amber-900 hover:bg-amber-200/60 flex items-center gap-1.5">
+        <span>👦</span> <span>Ben</span>
+      </button>
+    </div>
+
+    <!-- Sound & Reset Actions -->
+    <div class="flex items-center gap-2">
+      <button onclick="repeatCue()" class="px-3.5 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-2xl shadow flex items-center gap-1.5 text-sm transition active:scale-95" title="Hear again">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zm-2.5 9.77l-4-4H4v6h3.5l4 4v-6zm5.5-1c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        <span>Hear Audio</span>
+      </button>
+      <button onclick="resetGame()" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl shadow-sm text-sm transition active:scale-95">
+        ↺ Restart
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col items-center justify-between p-3 md:p-6 relative max-w-6xl mx-auto w-full">
+    <!-- Big Instruction Card for Preschoolers -->
+    <div class="w-full bg-white border-4 border-amber-300 rounded-3xl p-4 md:p-5 shadow-lg mb-4 flex flex-col sm:flex-row items-center justify-between gap-4 z-20">
+      <div class="flex items-center gap-4">
+        <!-- Target Color Indicator Bubble -->
+        <div id="target-bubble" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-md flex items-center justify-center text-3xl font-bold text-white transition-all transform duration-300 scale-100 bg-red-500">
+          <span id="target-emoji">🔴</span>
+        </div>
+        <div>
+          <div class="text-xs uppercase font-extrabold tracking-wider text-amber-600 mb-0.5">Teacher / Audio Cue:</div>
+          <div id="prompt-text" class="text-xl md:text-3xl font-black text-slate-800 tracking-wide">
+            "Jump on the RED stone!"
+          </div>
+          <div id="prompt-subtext" class="text-sm font-semibold text-slate-500 flex items-center gap-2 mt-1">
+            <span>Color: <strong id="target-color-name" class="text-red-600">RED</strong></span>
+            <span>&bull;</span>
+            <span id="context-hint">Step 1 of 5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jump Button Alternative (Assisted accessibility) -->
+      <button onclick="triggerAudioCue()" class="w-full sm:w-auto px-5 py-3 bg-amber-400 hover:bg-amber-500 active:scale-95 text-amber-950 font-black rounded-2xl text-base shadow flex items-center justify-center gap-2 transition">
+        <span>🗣️</span> <span>Play Cue Voice</span>
+      </button>
+    </div>
+
+    <div class="w-full relative rounded-3xl border-8 border-emerald-500 river-gradient shadow-2xl p-4 md:p-8 flex flex-col justify-between overflow-hidden min-h-[460px] md:min-h-[520px]">
+      
+      <!-- Water ripples and background foliage elements -->
+      <div class="absolute inset-0 water-wave pointer-events-none"></div>
+      
+      <!-- Floating water leaves/lilies -->
+      <div class="absolute top-12 left-10 text-3xl opacity-60 select-none">🪷</div>
+      <div class="absolute bottom-20 left-1/4 text-2xl opacity-60 select-none">🍃</div>
+      <div class="absolute top-1/3 right-12 text-3xl opacity-60 select-none">🪷</div>
+      <div class="absolute bottom-10 right-1/3 text-2xl opacity-50 select-none">🍃</div>
+
+      <!-- Start Bank (Bottom Shore) -->
+      <div class="relative z-10 w-full flex items-center justify-between bg-emerald-600/90 text-emerald-50 px-5 py-2.5 rounded-2xl border-2 border-emerald-400/80 shadow-md">
+        <div class="flex items-center gap-2 font-bold text-sm md:text-base">
+          <span>🌿 START SHORE</span>
+          <span class="text-xs bg-emerald-700/70 px-2 py-0.5 rounded-full font-semibold">Jardim I Playground</span>
+        </div>
+        <div id="river-progress" class="text-xs md:text-sm font-bold bg-white text-emerald-800 px-3 py-1 rounded-xl shadow-inner">
+          Progress: 0 / 5 Stones
+        </div>
+      </div>
+
+      <!-- Dynamic Stones Rows Container -->
+      <div id="stones-container" class="relative z-10 flex-1 flex flex-col justify-around py-4 gap-3">
+        <!-- Rendered via JavaScript -->
+      </div>
+
+      <!-- Finish Bank (Top Shore) -->
+      <div class="relative z-10 w-full flex items-center justify-between bg-emerald-600/90 text-emerald-50 px-5 py-2.5 rounded-2xl border-2 border-emerald-400/80 shadow-md">
+        <div class="flex items-center gap-2 font-bold text-sm md:text-base">
+          <span>🏡 HOME SHORE</span>
+          <span class="text-xs bg-emerald-700/70 px-2 py-0.5 rounded-full font-semibold">Warm Bed &amp; Dinner</span>
+        </div>
+        <div id="dest-reward" class="text-2xl animate-pulse">
+          🐟 🧣 🥣
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="w-full bg-amber-100 border-t-2 border-amber-200 px-4 py-2.5 text-center text-xs md:text-sm text-amber-900 font-semibold flex flex-wrap items-center justify-center gap-3">
+    <span>💡 <strong>Teacher tip:</strong> Invite one student at a time to jump on the classroom floor spot or touch the screen stone!</span>
+    <span class="hidden sm:inline">&bull;</span>
+    <span class="text-amber-700">Colors: Red, Blue, Yellow, Green &bull; BNCC EI03EO01 / EI03CG01</span>
+  </footer>
+
+  <!-- Modal: Victory Celebration -->
+  <div id="win-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl border-8 border-amber-400 p-6 md:p-8 max-w-md w-full text-center shadow-2xl transform transition-all scale-95 animate-in">
+      <div class="text-6xl md:text-7xl mb-3">🎉 🐱 🏠</div>
+      <h2 class="text-3xl font-black text-amber-900 mb-2">Hooray! We Crossed!</h2>
+      <p id="win-message" class="text-slate-600 font-semibold mb-6">
+        Pudding made it safely across the river to eat his yummy cat food and get cozy!
+      </p>
+      <div class="flex flex-col gap-2.5">
+        <button onclick="resetGame()" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg transition">
+          Play Again! 🐾
+        </button>
+        <button onclick="closeWinModal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-xl">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Web Audio API Sound Synthesizer (No external dependencies) */
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+      playBoing() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(540, now + 0.22);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      },
+      playSplash() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.3;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(700, now);
+        filter.frequency.linearRampToValueAtTime(200, now + 0.28);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+
+        whiteNoise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        whiteNoise.start(now);
+      },
+      playVictory() {
+        this.init();
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+        notes.forEach((freq, idx) => {
+          const now = this.ctx.currentTime + (idx * 0.12);
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        });
+      }
+    };
+
+    const COLORS = [
+      { id: 'red', name: 'RED', emoji: '🔴', bg: 'bg-rose-500', hover: 'hover:bg-rose-400', border: 'border-rose-700', text: 'text-rose-600', ring: '#f43f5e' },
+      { id: 'blue', name: 'BLUE', emoji: '🔵', bg: 'bg-sky-500', hover: 'hover:bg-sky-400', border: 'border-sky-700', text: 'text-sky-600', ring: '#0ea5e9' },
+      { id: 'yellow', name: 'YELLOW', emoji: '🟡', bg: 'bg-amber-400', hover: 'hover:bg-amber-300', border: 'border-amber-600', text: 'text-amber-500', ring: '#f59e0b' },
+      { id: 'green', name: 'GREEN', emoji: '🟢', bg: 'bg-emerald-500', hover: 'hover:bg-emerald-400', border: 'border-emerald-700', text: 'text-emerald-600', ring: '#10b981' }
+    ];
+
+    const CHARACTERS = {
+      pudding: { name: 'Pudding', icon: '🐱', winNote: 'Pudding crossed to find yummy cat food and his warm bed!' },
+      lia: { name: 'Lia', icon: '👧', winNote: 'Lia jumped across to sing with Ben and meet Pudding!' },
+      ben: { name: 'Ben', icon: '👦', winNote: 'Ben ran across the river to play soccer on the other side!' }
+    };
+
+    const CONTEXT_THEMES = [
+      { color: 'red', label: "Lia is cold!", object: "RED scarf", action: "Jump on RED!" },
+      { color: 'blue', label: "Ben is thirsty!", object: "BLUE water", action: "Jump on BLUE!" },
+      { color: 'yellow', label: "Pudding is hungry!", object: "YELLOW bowl", action: "Jump on YELLOW!" },
+      { color: 'green', label: "Pudding wants to play!", object: "GREEN ball", action: "Jump on GREEN!" },
+      { color: 'red', label: "Ben can run!", object: "RED shoes", action: "Jump on RED!" }
+    ];
+
+    let currentStep = 0;
+    const totalSteps = 5;
+    let selectedChar = 'pudding';
+    let stepLayouts = [];
+
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.rate = 0.85; // Slightly slower for 4-year-old learners
+        utter.pitch = 1.2;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function initGameSteps() {
+      stepLayouts = [];
+      for (let s = 0; s < totalSteps; s++) {
+        const theme = CONTEXT_THEMES[s % CONTEXT_THEMES.length];
+        const correctColor = COLORS.find(c => c.id === theme.color);
+        
+        // Pick 2 other distractors
+        const otherColors = COLORS.filter(c => c.id !== correctColor.id);
+        const shuffledOthers = [...otherColors].sort(() => 0.5 - Math.random()).slice(0, 2);
+        const rowChoices = [correctColor, ...shuffledOthers].sort(() => 0.5 - Math.random());
+
+        stepLayouts.push({
+          targetColor: correctColor,
+          theme: theme,
+          options: rowChoices
+        });
+      }
+    }
+
+    function renderBoard() {
+      const container = document.getElementById('stones-container');
+      container.innerHTML = '';
+
+      // Render rows from finish (top) to start (bottom)
+      for (let i = totalSteps - 1; i >= 0; i--) {
+        const stepData = stepLayouts[i];
+        const isCurrentActiveRow = (i === currentStep);
+        const isCleared = (i < currentStep);
+
+        const rowDiv = document.createElement('div');
+        rowDiv.className = `flex items-center justify-around w-full transition-all duration-300 py-1.5 ${
+          isCurrentActiveRow ? 'opacity-100 scale-105 z-20' : isCleared ? 'opacity-50' : 'opacity-70'
+        }`;
+
+        // Row Step Indicator
+        const rowNumberBadge = document.createElement('div');
+        rowNumberBadge.className = `hidden md:flex w-8 h-8 rounded-full items-center justify-center font-bold text-xs ${
+          isCleared ? 'bg-emerald-300 text-emerald-900' : isCurrentActiveRow ? 'bg-amber-300 text-amber-900 ring-2 ring-white' : 'bg-sky-800/40 text-sky-100'
+        }`;
+        rowNumberBadge.textContent = `${i + 1}`;
+        rowDiv.appendChild(rowNumberBadge);
+
+        // Render Stones in Row
+        const stonesWrap = document.createElement('div');
+        stonesWrap.className = 'flex items-center justify-center gap-3 sm:gap-6 md:gap-10 flex-1';
+
+        stepData.options.forEach((stoneColor) => {
+          const stoneBtn = document.createElement('button');
+          const isTarget = (stoneColor.id === stepData.targetColor.id);
+
+          stoneBtn.className = `relative stone-shadow ${stoneColor.bg} ${stoneColor.border} border-b-8 rounded-full w-20 h-16 sm:w-24 sm:h-20 md:w-28 md:h-22 flex flex-col items-center justify-center transition-all cursor-pointer select-none active:scale-95 ${
+            isCurrentActiveRow ? 'hover:scale-105' : 'cursor-not-allowed opacity-80'
+          }`;
+
+          // Visual Stone highlights & texture
+          stoneBtn.innerHTML = `
+            <div class="absolute inset-2 rounded-full border-t-2 border-white/40 pointer-events-none"></div>
+            <span class="text-xl sm:text-2xl">${stoneColor.emoji}</span>
+            <span class="text-xs sm:text-sm font-black text-white drop-shadow tracking-wider">${stoneColor.name}</span>
+          `;
+
+          // If character is currently resting on this stone
+          if (isCleared && isTarget) {
+            stoneBtn.classList.add('brightness-90');
+          }
+
+          if (isCurrentActiveRow) {
+            stoneBtn.onclick = () => handleStoneClick(stoneColor, isTarget, stoneBtn);
+          } else {
+            stoneBtn.onclick = () => {
+              if (i > currentStep) {
+                // Gentle helper reminder
+                speakText("First, jump on stone number " + (currentStep + 1));
+              }
+            };
+          }
+
+          // If this is current character position before jumping to next row
+          if (i === currentStep - 1 && isTarget) {
+            const charPin = document.createElement('div');
+            charPin.className = 'absolute -top-7 text-4xl char-idle filter drop-shadow-lg z-30';
+            charPin.innerHTML = CHARACTERS[selectedChar].icon;
+            stoneBtn.appendChild(charPin);
+          }
+
+          stonesWrap.appendChild(stoneBtn);
+        });
+
+        rowDiv.appendChild(stonesWrap);
+        container.appendChild(rowDiv);
+      }
+
+      // If at start (step 0), place character on the start bank indicator
+      if (currentStep === 0) {
+        const startBadge = document.getElementById('river-progress');
+        startBadge.innerHTML = `<span class="char-idle inline-block mr-1 text-base">${CHARACTERS[selectedChar].icon}</span> Ready to Jump! (0/5)`;
+      } else {
+        document.getElementById('river-progress').textContent = `Progress: ${currentStep} / ${totalSteps} Stones`;
+      }
+
+      updatePromptUI();
+    }
+
+    function handleStoneClick(colorSelected, isCorrect, element) {
+      AudioEngine.init();
+
+      if (isCorrect) {
+        // Correct Jump!
+        AudioEngine.playBoing();
+        element.classList.add('glow-active', 'stone-pressed');
+
+        // Character jumping animation speech
+        speakText(`Yes! ${colorSelected.name}!`);
+
+        setTimeout(() => {
+          currentStep++;
+          if (currentStep >= totalSteps) {
+            celebrateWin();
+          } else {
+            renderBoard();
+            triggerAudioCue();
+          }
+        }, 600);
+
+      } else {
+        // Wrong stone: gentle splash sound effect, stay safe on shore
+        AudioEngine.playSplash();
+        
+        // Show gentle splash effect
+        const splash = document.createElement('div');
+        splash.className = 'absolute inset-0 bg-sky-200/50 rounded-full splash-effect pointer-events-none';
+        element.appendChild(splash);
+
+        speakText(`Oops! That is ${colorSelected.name}. Try again!`);
+
+        setTimeout(() => {
+          splash.remove();
+        }, 600);
+      }
+    }
+
+    function updatePromptUI() {
+      if (currentStep >= totalSteps) return;
+
+      const stepData = stepLayouts[currentStep];
+      const target = stepData.targetColor;
+      const theme = stepData.theme;
+
+      // Update Top Banner
+      const bubble = document.getElementById('target-bubble');
+      bubble.style.backgroundColor = target.ring;
+      document.getElementById('target-emoji').textContent = target.emoji;
+
+      document.getElementById('prompt-text').textContent = `"${theme.action}"`;
+      document.getElementById('target-color-name').textContent = target.name;
+      document.getElementById('target-color-name').className = target.text + " font-black";
+
+      document.getElementById('context-hint').textContent = `${theme.label} (${theme.object})`;
+    }
+
+    function triggerAudioCue() {
+      if (currentStep >= totalSteps) return;
+      const stepData = stepLayouts[currentStep];
+      const speech = `${stepData.theme.label}. ${stepData.theme.action}`;
+      speakText(speech);
+    }
+
+    function repeatCue() {
+      triggerAudioCue();
+    }
+
+    function selectCharacter(charKey) {
+      selectedChar = charKey;
+      document.querySelectorAll('.char-btn').forEach(btn => {
+        btn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
+        btn.classList.add('text-amber-900');
+      });
+
+      const activeBtn = document.getElementById(`btn-char-${charKey}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
+        activeBtn.classList.remove('text-amber-900');
+      }
+
+      speakText(`Let's help ${CHARACTERS[charKey].name}!`);
+      renderBoard();
+    }
+
+    function celebrateWin() {
+      AudioEngine.playVictory();
+      const modal = document.getElementById('win-modal');
+      const msg = document.getElementById('win-message');
+      msg.textContent = CHARACTERS[selectedChar].winNote;
+      modal.classList.remove('hidden');
+      speakText(`Congratulations! ${CHARACTERS[selectedChar].name} reached home! Great job!`);
+    }
+
+    function closeWinModal() {
+      document.getElementById('win-modal').classList.add('hidden');
+    }
+
+    function resetGame() {
+      closeWinModal();
+      currentStep = 0;
+      initGameSteps();
+      renderBoard();
+      setTimeout(() => {
+        triggerAudioCue();
+      }, 300);
+    }
+
+    /* Initial Game Load */
+    window.onload = function() {
+      initGameSteps();
+      renderBoard();
+    };
+  </script>
+</body>
+</html>
